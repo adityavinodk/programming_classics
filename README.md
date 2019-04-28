@@ -1,0 +1,2 @@
+# Programming Classics
+This is a list of some of the programs which I have made which has interested me and has taken up a lot of my time and effort. All of them use different algorithms, data structures, different logics. This repository shall be regularly updated as and when something catches my interest.

@@ -1,0 +1,6 @@
+*.out
+*.o
+*.h.gch
+/bst_harddisk/mytree.dat
+.DS_Store
+.vscode
