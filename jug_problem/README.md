@@ -7,7 +7,7 @@ You can pour from any jug to any other jug. There are no markings on any of the 
 
 1. Run the file using $CMD: 
 ```shell
-gcc 0138_header_A3.h 0138_client_A3.c 0138_impl_A3.c
+gcc jugs.h client.c jugs.c
 ./a.out
 ```
 2. This program used function backtracking and a linked list to reach the goal state from the start state.
