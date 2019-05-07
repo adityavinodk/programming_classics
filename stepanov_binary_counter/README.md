@@ -23,7 +23,6 @@ gcc bin_counter.c <client_file_name>.c bin_counter.h
 11
 20 5 15 25 10 3 56 7 98 2 68
 
-20 5 15 25 10 3 56 7 98 2 68
 20 x 5 = 20 5 
 15 x 25 = 25 15 
 20 5 x 25 15 = 25 20 15 
