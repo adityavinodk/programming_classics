@@ -12,9 +12,9 @@ int main(){
     scanf("%1000s", s2);
     parse_string(s2, b);
     Bignum *c = malloc(sizeof(Bignum));
-    c = or_bit(a, b);
-    // c = subtract_numbers(a, b);
-    // // printf("%d\n", c->length);
+    // c = multiply_by_2(a);
+    c = karatsuba_multiply(a,b);
     print_number(stdout, c);
-    // printf("\n");
+    // Bignum *d = replicate(c, 0, c->length);
+    // print_number(stdout, d);
 }

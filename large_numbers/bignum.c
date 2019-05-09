@@ -96,6 +96,28 @@ void print_binary(Bignum *a)
     printf("\n");
 }
 
+Bignum *replicate(Bignum *a, int l, int r)
+{
+    Bignum *b = malloc(sizeof(Bignum));
+    for (int i = 0; i < r - l; i++)
+    {
+        b->A[i] = a->A[l + i];
+    }
+    b->length = r - l;
+    b = make_binary(b);
+    return b;
+}
+
+Bignum *initialize0()
+{
+    Bignum *a = malloc(sizeof(Bignum));
+    a->A[0] = 0;
+    a->length = 1;
+    a->B[0] = 0;
+    a->binary_length = 1;
+    return a;
+}
+
 Bignum *add_numbers(Bignum *a, Bignum *b)
 {
     Bignum *c = malloc(sizeof(Bignum));
@@ -126,7 +148,7 @@ Bignum *add_numbers(Bignum *a, Bignum *b)
             carry = 0;
         }
     }
-    if (carry!=0)
+    if (carry != 0)
     {
         for (int i = c->length; i >= 0; i--)
         {
@@ -135,6 +157,30 @@ Bignum *add_numbers(Bignum *a, Bignum *b)
         c->A[0] = carry;
         c->length++;
     }
+    int i = 0;
+    int break_point = 0;
+    int isFound = 0;
+    while (i < c->length && !isFound)
+    {
+        if (c->A[i] != 0)
+        {
+            break_point = i;
+            isFound = 1;
+        }
+        i++;
+    }
+    if (break_point > 0)
+    {
+        int i = break_point;
+        int j = 0;
+        while (i < c->length)
+        {
+            c->A[j] = c->A[i];
+            i++;
+            j++;
+        }
+    }
+    c->length -= break_point;
     c = make_binary(c);
     return c;
 }
@@ -142,8 +188,8 @@ Bignum *add_numbers(Bignum *a, Bignum *b)
 Bignum *subtract_numbers(Bignum *a, Bignum *b)
 {
     Bignum *c = malloc(sizeof(Bignum));
-    Bignum *higher = is_smaller(a, b) ? a : b;
-    Bignum *smaller = higher == a ? b : a;
+    Bignum *higher = a;
+    Bignum *smaller = b;
     int sub_pos = smaller->length;
     int pos_c = higher->length - 1;
     c->length = pos_c + 1;
@@ -229,6 +275,39 @@ Bignum *multiply_by_2(Bignum *a)
     return a;
 }
 
+Bignum *multiply(Bignum *a, Bignum *b)
+{
+    Bignum *c = initialize0();
+    int pos_a = a->length - 1, val;
+    int count = 0;
+    while (pos_a >= 0)
+    {
+        int *B = malloc(sizeof(int) * 10000);
+        int mul_carry = 0, val, b_len = b->length - 1, pos = 0;
+        while (b_len >= 0)
+        {
+            val = mul_carry + (b->A[b_len--] * a->A[pos_a]);
+            B[pos++] = val % 10;
+            mul_carry = (val / 10) % 10;
+        }
+        if (mul_carry != 0)
+            B[pos++] = mul_carry;
+        Bignum *d = initialize0();
+        for (int i = 0; i < pos; i++)
+            d->A[i] = B[pos - i - 1];
+        for (int i = pos; i < pos + count; i++)
+            d->A[i] = 0;
+        d->length = pos + count;
+        d = make_binary(d);
+        c = add_numbers(c, d);
+        free(d);
+        free(B);
+        pos_a--;
+        count++;
+    }
+    return c;
+}
+
 // 25 = 1001 = 1*8 + 1*1 = 0 + 1 + 8
 
 Bignum *make_decimal(Bignum *a)
@@ -240,7 +319,7 @@ Bignum *make_decimal(Bignum *a)
     a->A[0] = 0;
     a->length = 1;
     print_binary(a);
-    for (int i = rec_length-1; i >= 0; i--)
+    for (int i = rec_length - 1; i >= 0; i--)
     {
         carry = a->B[i];
         if (carry == 1)
@@ -339,3 +418,105 @@ Bignum *or_bit(Bignum *a, Bignum *b)
     c = make_decimal(c);
     return c;
 }
+
+void makeEqualLength(Bignum *a, Bignum *b)
+{
+    int len1 = a->length;
+    int len2 = b->length;
+    if (len1 < len2)
+    {
+        for (int i = len2 - len1 - 1; i >= 0; i--)
+            a->A[i + 1] = a->A[i];
+        for (int i = 0; i < len2 - len1; i++)
+            a->A[i] = 0;
+    }
+    else if (len1 > len2)
+    {
+        for (int i = len1 - len2 - 1; i >= 0; i--)
+            b->A[i + 1] = b->A[i];
+        for (int i = 0; i < len1 - len2; i++)
+            b->A[i] = 0;
+    }
+}
+
+Bignum *karatsuba_multiply(Bignum *a, Bignum *b)
+{
+    Bignum *c = malloc(sizeof(Bignum));
+
+    makeEqualLength(a, b);
+    int n = a->length;
+
+    // Base cases
+    if (n == 0)
+        return 0;
+    if (n == 1)
+        return multiply(a, b);
+    if (n % 2)
+    {
+        for (int i = n - 1; i >= 0; i--)
+        {
+            a->A[i + 1] = a->A[i];
+            b->A[i + 1] = b->A[i];
+        }
+        a->A[0] = 0;
+        b->A[0] = 0;
+        a->length++;
+        b->length++;
+        n++;
+    }
+
+    int m = n / 2;
+
+    Bignum *a1 = replicate(a, 0, m);
+    Bignum *a2 = replicate(a, m, n);
+    Bignum *b1 = replicate(b, 0, m);
+    Bignum *b2 = replicate(b, m, n);
+
+    Bignum *p1 = karatsuba_multiply(a1, b1);
+    Bignum *p2 = karatsuba_multiply(a2, b2);
+    Bignum *p3 = karatsuba_multiply(add_numbers(a1, a2), add_numbers(b1, b2));
+
+    Bignum *larger_power_of_10 = malloc(sizeof(Bignum));
+    Bignum *smaller_power_of_10 = malloc(sizeof(Bignum));
+    for (int i = 0; i < n; i++)
+        larger_power_of_10->A[i + 1] = 0;
+    larger_power_of_10->A[0] = 1;
+    larger_power_of_10->length = n + 1;
+    larger_power_of_10 = make_binary(larger_power_of_10);
+
+    for (int i = 0; i < m; i++)
+        smaller_power_of_10->A[i + 1] = 0;
+    smaller_power_of_10->A[0] = 1;
+    smaller_power_of_10->length = m + 1;
+    smaller_power_of_10 = make_binary(smaller_power_of_10);
+
+    Bignum *first = multiply(p1, larger_power_of_10);
+    Bignum *second = subtract_numbers(p3, add_numbers(p1, p2));
+    second = multiply(second, smaller_power_of_10);
+    Bignum *third = add_numbers(first, second);
+    c = add_numbers(third, p2);
+
+    free(a1);
+    free(a2);
+    free(b1);
+    free(b2);
+    free(p1);
+    free(p2);
+    free(p3);
+    free(smaller_power_of_10);
+    free(larger_power_of_10);
+    free(first);
+    free(second);
+    free(third);
+    return c;
+}
+
+// Bignum *division(Bignum *a, Bignum *b)
+// {
+//     int *M = malloc(sizeof(int)*1000);
+//     for(int i = 0; i<b->length; i++){
+//         M[i+1] = b->B[i];
+//     }
+//     M[0] = 0;
+    
+// }

@@ -16,3 +16,7 @@ Bignum* and_bit(Bignum *a, Bignum *b);
 Bignum* or_bit(Bignum *a, Bignum *b);
 int is_smaller(Bignum *a, Bignum *b);
 void print_binary(Bignum *a);
+Bignum* multiply(Bignum *a, Bignum *b);
+Bignum* karatsuba_multiply(Bignum *a,Bignum *b);
+Bignum* replicate(Bignum *a, int l, int r);
+Bignum *division(Bignum *a, Bignum *b);
