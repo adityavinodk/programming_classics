@@ -10,3 +10,13 @@ Considering the maximum value of numbers that can be stored is within 8 bytes of
 4.	For larger operations like multiplication, a pointer to a linked list is used for the Karatsuba algorithm.
 5.	The division operation is done using the non-restoring division method using the bit values of the numbers.
 6.	All basic logic operations are done using the binary form of the numbers.
+
+Run the file using $CMD: 
+```shell
+gcc bignum.c bignum.h client.c
+./a.out
+```
+or
+```shell
+make
+```
