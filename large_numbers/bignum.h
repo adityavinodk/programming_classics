@@ -9,14 +9,10 @@ typedef struct bignumber{
 }Bignum;
 
 void parse_string(char *s, Bignum *a);
-void print_number(FILE* stream, Bignum *a);
+void print_number(Bignum *a);
 Bignum* add_numbers(Bignum *a, Bignum *b);
 Bignum* subtract_numbers(Bignum *a, Bignum *b);
 Bignum* and_bit(Bignum *a, Bignum *b);
 Bignum* or_bit(Bignum *a, Bignum *b);
-int is_smaller(Bignum *a, Bignum *b);
-void print_binary(Bignum *a);
-Bignum* multiply(Bignum *a, Bignum *b);
 Bignum* karatsuba_multiply(Bignum *a,Bignum *b);
-Bignum* replicate(Bignum *a, int l, int r);
 Bignum* division(Bignum *a, Bignum *b);

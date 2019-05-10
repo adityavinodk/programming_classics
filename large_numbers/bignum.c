@@ -3,6 +3,7 @@
 #include <string.h>
 #include "bignum.h"
 
+// Compares two Bignum's and checks which is larger
 int is_smaller(Bignum *a, Bignum *b)
 {
     if (a->length != b->length)
@@ -22,6 +23,7 @@ int is_smaller(Bignum *a, Bignum *b)
     return -1;
 }
 
+// Adds the binary form of the Bignum in the structure
 Bignum *make_binary(Bignum *a)
 {
     int val, carry, runTill = 1, zero_count, count = 0;
@@ -57,10 +59,55 @@ Bignum *make_binary(Bignum *a)
         i++;
         j--;
     }
+    free(b);
     a->binary_length = count;
     return a;
 }
 
+// Mutliplying by 2
+Bignum *multiply_by_2(Bignum *a)
+{
+    int *B = malloc(sizeof(int) * 10000);
+    int bin_len = a->length - 1, mul_carry = 0, val, pos = 0;
+    while (bin_len >= 0)
+    {
+        val = mul_carry + (a->A[bin_len--] * 2);
+        B[pos++] = val % 10;
+        mul_carry = (val / 10) % 10;
+    }
+    if (mul_carry != 0)
+        B[pos++] = mul_carry;
+    for (int i = 0; i < pos; i++)
+    {
+        a->A[i] = B[pos - i - 1];
+    }
+    a->length = pos;
+    free(B);
+    return a;
+}
+
+// Add the decimal form of Binary number
+Bignum *make_decimal(Bignum *a)
+{
+    Bignum *mul = malloc(sizeof(Bignum));
+    char *s = "1";
+    int carry, rec_length = a->binary_length;
+    parse_string(s, mul);
+    a->A[0] = 0;
+    a->length = 1;
+    for (int i = rec_length - 1; i >= 0; i--)
+    {
+        carry = a->B[i];
+        if (carry == 1)
+        {
+            a = add_numbers(a, mul);
+        }
+        mul = multiply_by_2(mul);
+    }
+    return a;
+}
+
+// Parses the input string and converts it into Bignum form
 void parse_string(char *s, Bignum *a)
 {
     int i = 0, j = 0;
@@ -74,9 +121,9 @@ void parse_string(char *s, Bignum *a)
     a = make_binary(a);
 }
 
-void print_number(FILE *stream, Bignum *a)
+// Prints the number
+void print_number(Bignum *a)
 {
-    printf("number - ");
     int i = 0;
     while (i < a->length)
     {
@@ -86,16 +133,17 @@ void print_number(FILE *stream, Bignum *a)
     printf("\n");
 }
 
+// Prints the binary form of the number
 void print_binary(Bignum *a)
 {
-    printf("binary form - ");
     for (int i = 0; i < a->binary_length; i++)
     {
         printf("%d", a->B[i]);
     }
-    printf("\nlen - %d\n", a->binary_length);
+    printf("\n");
 }
 
+// Replicates 2 Bignum's based on their digits
 Bignum *replicate(Bignum *a, int l, int r)
 {
     Bignum *b = malloc(sizeof(Bignum));
@@ -108,6 +156,7 @@ Bignum *replicate(Bignum *a, int l, int r)
     return b;
 }
 
+// Initializes a Bignum variable to value 0
 Bignum *initialize0()
 {
     Bignum *a = malloc(sizeof(Bignum));
@@ -118,6 +167,7 @@ Bignum *initialize0()
     return a;
 }
 
+// Removes any prefix 0's before the binary form of the number
 void remove_breakpoint_binary(Bignum *c){
     int i = 0;
     int break_point = 0;
@@ -143,6 +193,7 @@ void remove_breakpoint_binary(Bignum *c){
     c->binary_length -= break_point;
 }
 
+// Removes any prefix 0's before the number
 void remove_breakpoint_decimal(Bignum *c){
     int i = 0;
     int break_point = 0;
@@ -168,6 +219,7 @@ void remove_breakpoint_decimal(Bignum *c){
     c->length -= break_point;
 }
 
+// Adds 2 numbers
 Bignum *add_numbers(Bignum *a, Bignum *b)
 {
     Bignum *c = malloc(sizeof(Bignum));
@@ -207,34 +259,12 @@ Bignum *add_numbers(Bignum *a, Bignum *b)
         c->A[0] = carry;
         c->length++;
     }
-    int i = 0;
-    int break_point = 0;
-    int isFound = 0;
-    while (i < c->length && !isFound)
-    {
-        if (c->A[i] != 0)
-        {
-            break_point = i;
-            isFound = 1;
-        }
-        i++;
-    }
-    if (break_point > 0)
-    {
-        int i = break_point;
-        int j = 0;
-        while (i < c->length)
-        {
-            c->A[j] = c->A[i];
-            i++;
-            j++;
-        }
-    }
-    c->length -= break_point;
+    remove_breakpoint_decimal(c);
     c = make_binary(c);
     return c;
 }
 
+// Subtract 2 numbers
 Bignum *subtract_numbers(Bignum *a, Bignum *b)
 {
     Bignum *c = malloc(sizeof(Bignum));
@@ -276,55 +306,12 @@ Bignum *subtract_numbers(Bignum *a, Bignum *b)
             pos_c--;
         }
     }
-    int i = 0;
-    int break_point = 0;
-    int isFound = 0;
-    while (i < c->length && !isFound)
-    {
-        if (c->A[i] != 0)
-        {
-            break_point = i;
-            isFound = 1;
-        }
-        i++;
-    }
-    if (break_point > 0)
-    {
-        int i = break_point;
-        int j = 0;
-        while (i < c->length)
-        {
-            c->A[j] = c->A[i];
-            i++;
-            j++;
-        }
-    }
-    c->length -= break_point;
+    remove_breakpoint_decimal(c);
     c = make_binary(c);
     return c;
 }
 
-Bignum *multiply_by_2(Bignum *a)
-{
-    int *B = malloc(sizeof(int) * 10000);
-    int bin_len = a->length - 1, mul_carry = 0, val, pos = 0;
-    while (bin_len >= 0)
-    {
-        val = mul_carry + (a->A[bin_len--] * 2);
-        B[pos++] = val % 10;
-        mul_carry = (val / 10) % 10;
-    }
-    if (mul_carry != 0)
-        B[pos++] = mul_carry;
-    for (int i = 0; i < pos; i++)
-    {
-        a->A[i] = B[pos - i - 1];
-    }
-    a->length = pos;
-    free(B);
-    return a;
-}
-
+// Multiplying 2 Bignum's
 Bignum *multiply(Bignum *a, Bignum *b)
 {
     Bignum *c = initialize0();
@@ -358,26 +345,7 @@ Bignum *multiply(Bignum *a, Bignum *b)
     return c;
 }
 
-Bignum *make_decimal(Bignum *a)
-{
-    Bignum *mul = malloc(sizeof(Bignum));
-    char *s = "1";
-    int carry, rec_length = a->binary_length;
-    parse_string(s, mul);
-    a->A[0] = 0;
-    a->length = 1;
-    for (int i = rec_length - 1; i >= 0; i--)
-    {
-        carry = a->B[i];
-        if (carry == 1)
-        {
-            a = add_numbers(a, mul);
-        }
-        mul = multiply_by_2(mul);
-    }
-    return a;
-}
-
+// Performs AND operation on 2 numberss
 Bignum *and_bit(Bignum *a, Bignum *b)
 {
     Bignum *c = malloc(sizeof(Bignum));
@@ -394,6 +362,7 @@ Bignum *and_bit(Bignum *a, Bignum *b)
     return c;
 }
 
+// Performs OR operation on 2 numbers
 Bignum *or_bit(Bignum *a, Bignum *b)
 {
     Bignum *c = malloc(sizeof(Bignum));
@@ -424,26 +393,31 @@ Bignum *or_bit(Bignum *a, Bignum *b)
     return c;
 }
 
+// Makes 2 Bignum's of equal length by appending 0's at the beginning
 void makeEqualLength(Bignum *a, Bignum *b)
 {
     int len1 = a->length;
     int len2 = b->length;
     if (len1 < len2)
     {
-        for (int i = len2 - len1 - 1; i >= 0; i--)
-            a->A[i + 1] = a->A[i];
+        for(int i = len1; i>=0; i--)
+            a->A[i+len2-len1] = a->A[i];
         for (int i = 0; i < len2 - len1; i++)
             a->A[i] = 0;
+        a->length += len2-len1;
     }
     else if (len1 > len2)
     {
-        for (int i = len1 - len2 - 1; i >= 0; i--)
-            b->A[i + 1] = b->A[i];
+        for(int i = len2; i>=0; i--)
+            b->A[i+len1-len2] = b->A[i];
         for (int i = 0; i < len1 - len2; i++)
             b->A[i] = 0;
+        b->length += len1-len2;
     }
+    // printf("a - ");
 }
 
+// Performs Karatsuba Multiplication
 Bignum *karatsuba_multiply(Bignum *a, Bignum *b)
 {
     Bignum *c = malloc(sizeof(Bignum));
@@ -516,6 +490,7 @@ Bignum *karatsuba_multiply(Bignum *a, Bignum *b)
     return c;
 }
 
+// LSL Shift operation for AQ
 void shift_left(int *A, int *Q, int length)
 {
     for (int i = 0; i < length; i++)
@@ -530,6 +505,7 @@ void shift_left(int *A, int *Q, int length)
     }
 }
 
+// Adds two binary numbers 
 int *add_bits(int *a, int *b, int length)
 {
     int c = 0;
@@ -542,6 +518,7 @@ int *add_bits(int *a, int *b, int length)
     return val;
 }
 
+// Subtracts 2 binary numbers
 int *subtract_bits(int *a, int *b, int length)
 {
     int *c = malloc(sizeof(int) * length);
@@ -561,6 +538,7 @@ int *subtract_bits(int *a, int *b, int length)
     return add_bits(a, c, length);
 }
 
+// Performs division 
 Bignum *division(Bignum *a, Bignum *b)
 {
     int length = a->binary_length;
