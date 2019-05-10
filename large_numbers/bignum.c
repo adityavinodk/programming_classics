@@ -93,7 +93,7 @@ void print_binary(Bignum *a)
     {
         printf("%d", a->B[i]);
     }
-    printf("\n");
+    printf("\nlen - %d\n", a->binary_length);
 }
 
 Bignum *replicate(Bignum *a, int l, int r)
@@ -116,6 +116,56 @@ Bignum *initialize0()
     a->B[0] = 0;
     a->binary_length = 1;
     return a;
+}
+
+void remove_breakpoint_binary(Bignum *c){
+    int i = 0;
+    int break_point = 0;
+    int isFound = 0;
+    while (i < c->binary_length && !isFound)
+    {
+        if (c->B[i] != 0)
+        {
+            break_point = i;
+            isFound = 1;
+        }
+        i++;
+    }
+    if (break_point > 0)
+    {
+        i = break_point;
+        int j = 0;
+        while (i < c->binary_length)
+        {
+            c->B[j++] = c->B[i++];
+        }
+    }
+    c->binary_length -= break_point;
+}
+
+void remove_breakpoint_decimal(Bignum *c){
+    int i = 0;
+    int break_point = 0;
+    int isFound = 0;
+    while (i < c->length && !isFound)
+    {
+        if (c->A[i] != 0)
+        {
+            break_point = i;
+            isFound = 1;
+        }
+        i++;
+    }
+    if (break_point > 0)
+    {
+        i = break_point;
+        int j = 0;
+        while (i < c->length)
+        {
+            c->A[j++] = c->A[i++];
+        }
+    }
+    c->length -= break_point;
 }
 
 Bignum *add_numbers(Bignum *a, Bignum *b)
@@ -308,8 +358,6 @@ Bignum *multiply(Bignum *a, Bignum *b)
     return c;
 }
 
-// 25 = 1001 = 1*8 + 1*1 = 0 + 1 + 8
-
 Bignum *make_decimal(Bignum *a)
 {
     Bignum *mul = malloc(sizeof(Bignum));
@@ -318,7 +366,6 @@ Bignum *make_decimal(Bignum *a)
     parse_string(s, mul);
     a->A[0] = 0;
     a->length = 1;
-    print_binary(a);
     for (int i = rec_length - 1; i >= 0; i--)
     {
         carry = a->B[i];
@@ -342,28 +389,7 @@ Bignum *and_bit(Bignum *a, Bignum *b)
     {
         c->B[len--] = a->B[i--] & b->B[j--];
     }
-    i = 0;
-    int break_point = 0;
-    int isFound = 0;
-    while (i < c->binary_length && !isFound)
-    {
-        if (c->B[i] != 0)
-        {
-            break_point = i;
-            isFound = 1;
-        }
-        i++;
-    }
-    if (break_point > 0)
-    {
-        i = break_point;
-        int j = 0;
-        while (i < c->binary_length)
-        {
-            c->B[j++] = c->B[i++];
-        }
-    }
-    c->binary_length -= break_point;
+    remove_breakpoint_binary(c);
     c = make_decimal(c);
     return c;
 }
@@ -393,28 +419,7 @@ Bignum *or_bit(Bignum *a, Bignum *b)
             c->B[len--] = b->B[j--];
         }
     }
-    i = 0;
-    int break_point = 0;
-    int isFound = 0;
-    while (i < c->binary_length && !isFound)
-    {
-        if (c->B[i] != 0)
-        {
-            break_point = i;
-            isFound = 1;
-        }
-        i++;
-    }
-    if (break_point > 0)
-    {
-        i = break_point;
-        int j = 0;
-        while (i < c->binary_length)
-        {
-            c->B[j++] = c->B[i++];
-        }
-    }
-    c->binary_length -= break_point;
+    remove_breakpoint_binary(c);
     c = make_decimal(c);
     return c;
 }
@@ -511,12 +516,96 @@ Bignum *karatsuba_multiply(Bignum *a, Bignum *b)
     return c;
 }
 
-// Bignum *division(Bignum *a, Bignum *b)
-// {
-//     int *M = malloc(sizeof(int)*1000);
-//     for(int i = 0; i<b->length; i++){
-//         M[i+1] = b->B[i];
-//     }
-//     M[0] = 0;
-    
-// }
+void shift_left(int *A, int *Q, int length)
+{
+    for (int i = 0; i < length; i++)
+    {
+        A[i] = A[i + 1];
+    }
+    A[length] = Q[0];
+
+    for (int i = 0; i < length - 1; i++)
+    {
+        Q[i] = Q[i + 1];
+    }
+}
+
+int *add_bits(int *a, int *b, int length)
+{
+    int c = 0;
+    int *val = malloc(sizeof(int) * length);
+    for (int i = length; i >= 0; i--)
+    {
+        val[i] = a[i] ^ b[i] ^ c;
+        c = ((a[i] & b[i]) | (a[i] & c)) | (b[i] & c);
+    }
+    return val;
+}
+
+int *subtract_bits(int *a, int *b, int length)
+{
+    int *c = malloc(sizeof(int) * length);
+    for (int i = 0; i < length; i++)
+    {
+        if (b[i])
+            c[i] = 0;
+        else
+            c[i] = 1;
+    }
+    int *d = malloc(sizeof(int) * length);
+    for (int i = 0; i < length - 1; i++)
+        d[i] = 0;
+    d[length - 1] = 1;
+    c = add_bits(c, d, length);
+    free(d);
+    return add_bits(a, c, length);
+}
+
+Bignum *division(Bignum *a, Bignum *b)
+{
+    int length = a->binary_length;
+    int n = length;
+    int *M = malloc(sizeof(int) * (length + 1));
+    int diff_length = length - b->binary_length;
+    int *temp = malloc(sizeof(int) * length);
+    for (int i = b->binary_length - 1; i >= 0; i--)
+        temp[i + diff_length] = b->B[i];
+    for (int i = 0; i < diff_length; i++)
+        temp[i] = 0;
+    for (int i = 0; i < length; i++)
+        M[i + 1] = temp[i];
+    M[0] = 0;
+    int *A = malloc(sizeof(int) * (length + 1));
+    for (int i = 0; i < length + 1; i++)
+        A[i] = 0;
+    int *Q = malloc(sizeof(int) * length);
+    for (int i = 0; i < length; i++)
+        Q[i] = a->B[i];
+    while (n != 0)
+    {
+        shift_left(A, Q, length);
+        if (A[0] == 0) A = subtract_bits(A, M, length + 1);
+        else A = add_bits(A, M, length + 1);
+
+        if (A[0] == 1)
+            Q[length - 1] = 0;
+        else
+            Q[length - 1] = 1;
+        n--;
+    }
+    if (A[0])
+        A = add_bits(A, M, length + 1);
+    Bignum *c = malloc(sizeof(Bignum));
+    for (int i = 0; i < length; i++)
+        c->B[i] = Q[i];
+    c->binary_length = length;
+    remove_breakpoint_binary(c);
+    c = make_decimal(c);
+    Bignum *d = malloc(sizeof(Bignum));
+    for(int i = 0; i<length+1; i++)
+        d->B[i] = A[i];
+    d->binary_length = length+1;
+    remove_breakpoint_binary(d);
+    d = make_decimal(d);
+    return c;
+}

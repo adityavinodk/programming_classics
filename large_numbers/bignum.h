@@ -19,4 +19,4 @@ void print_binary(Bignum *a);
 Bignum* multiply(Bignum *a, Bignum *b);
 Bignum* karatsuba_multiply(Bignum *a,Bignum *b);
 Bignum* replicate(Bignum *a, int l, int r);
-Bignum *division(Bignum *a, Bignum *b);
+Bignum* division(Bignum *a, Bignum *b);
