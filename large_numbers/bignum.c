@@ -90,14 +90,17 @@ Bignum *multiply_by_2(Bignum *a)
 Bignum *make_decimal(Bignum *a)
 {
     Bignum *mul = malloc(sizeof(Bignum));
+    int *B = malloc(sizeof(int) * a->binary_length);
     char *s = "1";
     int carry, rec_length = a->binary_length;
     parse_string(s, mul);
     a->A[0] = 0;
     a->length = 1;
+    for (int i = 0; i < rec_length; i++)
+        B[i] = a->B[i];
     for (int i = rec_length - 1; i >= 0; i--)
     {
-        carry = a->B[i];
+        carry = B[i];
         if (carry == 1)
         {
             a = add_numbers(a, mul);
@@ -168,7 +171,8 @@ Bignum *initialize0()
 }
 
 // Removes any prefix 0's before the binary form of the number
-void remove_breakpoint_binary(Bignum *c){
+void remove_breakpoint_binary(Bignum *c)
+{
     int i = 0;
     int break_point = 0;
     int isFound = 0;
@@ -194,7 +198,8 @@ void remove_breakpoint_binary(Bignum *c){
 }
 
 // Removes any prefix 0's before the number
-void remove_breakpoint_decimal(Bignum *c){
+void remove_breakpoint_decimal(Bignum *c)
+{
     int i = 0;
     int break_point = 0;
     int isFound = 0;
@@ -217,6 +222,8 @@ void remove_breakpoint_decimal(Bignum *c){
         }
     }
     c->length -= break_point;
+    if (i == c->length && break_point == 0)
+        c->length = 1;
 }
 
 // Adds 2 numbers
@@ -383,7 +390,7 @@ Bignum *or_bit(Bignum *a, Bignum *b)
     }
     else if (i < 0)
     {
-        while (i >= 0)
+        while (j >= 0)
         {
             c->B[len--] = b->B[j--];
         }
@@ -400,19 +407,19 @@ void makeEqualLength(Bignum *a, Bignum *b)
     int len2 = b->length;
     if (len1 < len2)
     {
-        for(int i = len1; i>=0; i--)
-            a->A[i+len2-len1] = a->A[i];
+        for (int i = len1; i >= 0; i--)
+            a->A[i + len2 - len1] = a->A[i];
         for (int i = 0; i < len2 - len1; i++)
             a->A[i] = 0;
-        a->length += len2-len1;
+        a->length += len2 - len1;
     }
     else if (len1 > len2)
     {
-        for(int i = len2; i>=0; i--)
-            b->A[i+len1-len2] = b->A[i];
+        for (int i = len2; i >= 0; i--)
+            b->A[i + len1 - len2] = b->A[i];
         for (int i = 0; i < len1 - len2; i++)
             b->A[i] = 0;
-        b->length += len1-len2;
+        b->length += len1 - len2;
     }
     // printf("a - ");
 }
@@ -487,6 +494,7 @@ Bignum *karatsuba_multiply(Bignum *a, Bignum *b)
     free(first);
     free(second);
     free(third);
+    remove_breakpoint_decimal(c);
     return c;
 }
 
@@ -505,7 +513,7 @@ void shift_left(int *A, int *Q, int length)
     }
 }
 
-// Adds two binary numbers 
+// Adds two binary numbers
 int *add_bits(int *a, int *b, int length)
 {
     int c = 0;
@@ -538,9 +546,12 @@ int *subtract_bits(int *a, int *b, int length)
     return add_bits(a, c, length);
 }
 
-// Performs division 
+// Performs division
 Bignum *division(Bignum *a, Bignum *b)
 {
+    Bignum *c = malloc(sizeof(Bignum));
+    if (b->B[0] == 0 && b->binary_length == 1)
+        return NULL;
     int length = a->binary_length;
     int n = length;
     int *M = malloc(sizeof(int) * (length + 1));
@@ -562,8 +573,10 @@ Bignum *division(Bignum *a, Bignum *b)
     while (n != 0)
     {
         shift_left(A, Q, length);
-        if (A[0] == 0) A = subtract_bits(A, M, length + 1);
-        else A = add_bits(A, M, length + 1);
+        if (A[0] == 0)
+            A = subtract_bits(A, M, length + 1);
+        else
+            A = add_bits(A, M, length + 1);
 
         if (A[0] == 1)
             Q[length - 1] = 0;
@@ -573,17 +586,36 @@ Bignum *division(Bignum *a, Bignum *b)
     }
     if (A[0])
         A = add_bits(A, M, length + 1);
-    Bignum *c = malloc(sizeof(Bignum));
     for (int i = 0; i < length; i++)
         c->B[i] = Q[i];
     c->binary_length = length;
     remove_breakpoint_binary(c);
     c = make_decimal(c);
     Bignum *d = malloc(sizeof(Bignum));
-    for(int i = 0; i<length+1; i++)
+    for (int i = 0; i < length + 1; i++)
         d->B[i] = A[i];
-    d->binary_length = length+1;
+    d->binary_length = length + 1;
     remove_breakpoint_binary(d);
     d = make_decimal(d);
+    printf("\nRemainder - ");
+    print_number(d);
+    printf("Quotient - ");
     return c;
+}
+
+Bignum *exponent(Bignum *a, int pow)
+{
+    Bignum *c = replicate(a, 0, a->length);
+    if (!pow)
+    {
+        a->length = 1;
+        a->A[0] = 1;
+        return a;
+    }
+    while (pow > 1)
+    {
+        a = multiply(a, c);
+        pow--;
+    }
+    return a;
 }

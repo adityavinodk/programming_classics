@@ -16,3 +16,4 @@ Bignum* and_bit(Bignum *a, Bignum *b);
 Bignum* or_bit(Bignum *a, Bignum *b);
 Bignum* karatsuba_multiply(Bignum *a,Bignum *b);
 Bignum* division(Bignum *a, Bignum *b);
+Bignum* exponent(Bignum *a, int pow);
