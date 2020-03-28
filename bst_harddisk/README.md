@@ -22,7 +22,7 @@ Please Check `sample_input.txt` and `sample_output.txt` for example.
 gcc bst_file.h client.c bst_file.c
 ./a.out
 ```
-2. This program implements a Binary Search Tree on a Harddisk using a .dat file
+2. This program implements a Binary Search Tree on a Harddisk using a `.dat` file
 3. It uses 2 structures, a tree structure and a node structure.
 4. The tree structure is first written into the file and it contains two offsets, one for the root 
    and one for the free_head.
